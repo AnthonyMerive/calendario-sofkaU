@@ -47,8 +47,6 @@ class SchedulerServiceTest {
 
         Flux<ProgramDate> response = schedulerService.generateCalendar(programId, startDate);
 
-        response.subscribe();
-
         // Assertions.assertEquals(13, response.single());//TODO: hacer de otro modo
         // Assertions.assertEquals(getSnapResult(), new Gson().toJson(response));//TODO: hacer de otro modo
 
