@@ -3,6 +3,9 @@ package co.com.sofka.calendar.services;
 import co.com.sofka.calendar.collections.Program;
 import co.com.sofka.calendar.model.ProgramDate;
 import co.com.sofka.calendar.repositories.ProgramRepository;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,31 +19,44 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-
 @Service
 public class SchedulerService {
 
     @Autowired
     private ProgramRepository programRepository;
 
-    //TODO: deben retornar un flux de programDate Flux<ProgramDate>
-    public List<ProgramDate> generateCalendar(String programId, LocalDate startDate) {
+    // TODO: deben retornar un flux de programDate Flux<ProgramDate>
+    public Flux<ProgramDate> generateCalendar(String programId, LocalDate startDate) {
         var endDate = new AtomicReference<>(LocalDate.from(startDate));
-        final AtomicInteger[] pivot = {new AtomicInteger()};
-        final int[] index = {0};
+        final AtomicInteger[] pivot = { new AtomicInteger() };
+        final int[] index = { 0 };
 
-        //TODO: debe pasarlo a reactivo, no puede trabaja elementos bloqueantes
-        //TODO: trabajar el map reactivo y no deben colectar
-        var program = programRepository.findById(programId).block();
-        return Optional.ofNullable(program)
-                .map(this::getDurationOf)
-                .orElseThrow(() -> new RuntimeException("El programa academnico no existe"))
+        // TODO: debe pasarlo a reactivo, no puede trabaja elementos bloqueantes
+        // TODO: trabajar el map reactivo y no deben colectar
+
+        // --------------------- funcional --------------------------
+
+        // var program = programRepository.findById(programId).block();
+        // return Optional.ofNullable(program)
+        // .map(this::getDurationOf)
+        // .orElseThrow(() -> new RuntimeException("El programa academnico no existe"))
+        // .map(toProgramDate(startDate, endDate, pivot[0], index))
+        // .collect(Collectors.toList());
+        
+        // ---------------------------------------------------------
+
+        var program = programRepository.findById(programId);
+
+        return program
+                .flatMapMany(p -> Flux.fromStream(getDurationOf(p)))
                 .map(toProgramDate(startDate, endDate, pivot[0], index))
-                .collect(Collectors.toList());
+                .switchIfEmpty(Mono.error(new RuntimeException("El programa academnico no existe")));
+
     }
 
-    //No tocar
-    private Function<String, ProgramDate> toProgramDate(LocalDate startDate, AtomicReference<LocalDate> endDate, AtomicInteger atomicInteger, int[] index) {
+    // No tocar
+    private Function<String, ProgramDate> toProgramDate(LocalDate startDate, AtomicReference<LocalDate> endDate,
+            AtomicInteger atomicInteger, int[] index) {
         return category -> {
             var increment = endDate.get().getDayOfWeek().getValue() > 5
                     ? 8 - endDate.get().getDayOfWeek().getValue()
@@ -54,7 +70,7 @@ public class SchedulerService {
         };
     }
 
-    //No tocar
+    // No tocar
     private Stream<String> getDurationOf(Program program) {
         return program.getCourses().stream()
                 .flatMap(courseTime -> courseTime.getCategories().stream())
