@@ -117,6 +117,8 @@ class SchedulerServiceTest {
         Mockito.verify(repository).findById(programId);
     }
 
+    //modificado el dummy para realizar el test
+    
     // no tocar
     private Program getProgramDummy() {
         var program = new Program();
