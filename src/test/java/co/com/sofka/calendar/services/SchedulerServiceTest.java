@@ -18,6 +18,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import static org.mockito.Mockito.verify;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,7 +50,10 @@ class SchedulerServiceTest {
         Flux<ProgramDate> response = schedulerService.generateCalendar(programId, startDate);
 
         // Assertions.assertEquals(13, response.single());//TODO: hacer de otro modo
-        // Assertions.assertEquals(getSnapResult(), new Gson().toJson(response));//TODO: hacer de otro modo
+        // Assertions.assertEquals(getSnapResult(), new Gson().toJson(response));//TODO:
+        // hacer de otro modo
+
+        // metodo Flux:
 
         StepVerifier.create(response)
                 .expectNextMatches(programDate -> {
@@ -92,14 +97,24 @@ class SchedulerServiceTest {
         Mockito.when(repository.findById(programId)).thenReturn(Mono.empty());
 
         // TODO: hacer de otro modo
-        var exception = Assertions.assertThrows(RuntimeException.class, () -> {
-            schedulerService.generateCalendar(programId, startDate);// TODO: hacer una subscripción de el servicio
-                                                                    // reactivo
+        // var exception = Assertions.assertThrows(RuntimeException.class, () -> {
+        // schedulerService.generateCalendar(programId, startDate);// TODO: hacer una
+        // subscripción de el servicio
+        // // reactivo
 
-        });
-        Assertions.assertEquals("El programa academnico no existe", exception.getMessage());// TODO: hacer de otro modo
+        // });
+
+        // Assertions.assertEquals("El programa academnico no existe",
+        // exception.getMessage());// TODO: hacer de otro modo
+        // Mockito.verify(repository).findById(programId);
+
+        Flux<ProgramDate> response = schedulerService.generateCalendar(programId, startDate);
+
+        StepVerifier.create(response)
+                .expectErrorMessage("El programa academnico no existe")
+                .verify();
+
         Mockito.verify(repository).findById(programId);
-
     }
 
     // no tocar
